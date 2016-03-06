@@ -1,0 +1,186 @@
+---
+title: "Gary's analysis"
+author: "Gary Sztajnman"
+date: "February 16, 2016"
+output: pdf_document
+geometry: margin=2cm
+---
+
+# Part 4 - Understanding the impact of flood
+
+Flood have a huge impact on population and economy.
+Heavy rain leads to destructionsm, death, displacement, healness, reparations.
+Some countries may receive more floods based on its location (for example India) but some countries also don't have the capacity to prevent, prepare population, manage flood and repare.
+
+In this analysis we will try to analyse what characteristic influence the impact of a flood.
+
+## Impact evolution
+
+```{r, echo=FALSE, warning= FALSE}
+library(scales)
+library(chron)
+library(RColorBrewer)
+library(ggplot2)
+
+
+workdir ="/Users/garyair/Desktop/Dropbox/Columbia/EDA/P2/Edav-project-2/Edav-project-2/Data"
+setwd(workdir)
+
+
+Dev = read.csv("2015_development index.csv")
+#View(Dev)
+flood2 <- read.csv("cleanGlobalFloodDataWithRegionsfiltered-Index noNA.csv")
+#View(flood2)
+
+## Adding a year column
+#date1<- as.Date(flood$dateBegan,"%m/%d/%Y")
+#flood$year<-as.numeric(format(date1, "%Y"))
+
+## Add other to mainCause1
+
+flood2$GNIPerCapita <- as.numeric(flood2$GNIPerCapita)
+flood2$peopleDisplaced <- as.numeric(flood2$peopleDisplaced)
+flood2$HDIclass <- cut(flood2$HDI,
+                     breaks=c(-Inf, 0.6, 0.75, Inf),
+                     labels=c("low","medium","high"))
+#summary(flood2$HDIclass)
+#plot(flood2$HDIclass)
+
+```
+
+Let's first take a look at the evolution of flood in time
+
+```{r, echo=FALSE}
+#PLOT
+## Severity by year:
+ggplot(data = flood2, aes(year, magnitude, fill=severity)) +
+  stat_summary(fun.y = "mean", geom = "bar")  # or "line" 
+
+## Graph by cause
+#ggplot(data = flood2, aes(year, magnitude, fill=mainCause1)) +
+#  stat_summary(fun.y = "sum", geom = "bar")  # or "line" 
+
+## Graph by cause except Heavy rain
+#ggplot(subset(flood2, mainCause1 != "Heavy Rain")) +
+#  aes(year, magnitude, fill=mainCause1) +
+#  stat_summary(fun.y = "sum", geom = "bar")
+```
+
+We note that there is an augmentation of the severity of flood in the last decade. But there is no specific cause that can explain it.
+
+```{r, echo=FALSE}
+## Type of flood by continent
+ggplot(subset(flood2)) +
+  aes(year, magnitude, fill=mainCause1) +
+  stat_summary(fun.y = "sum", geom = "bar") +
+  facet_wrap(~sub_region, ncol = 4)
+```
+
+When we analyze the repartion of floods by region, we note that there are some region more affected and that some region are more targeted by specific type of disaster.
+For example:
+
+ + Eastern Europe and North American are more touched by Ice Melt
+ + Southern Asia is highly affected by Monsoon.
+ + Central America is mainly touched by hurricane.
+  
+
+# Impact on population
+```{r, echo=FALSE}
+# Multiple plot function
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                    ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+ if (numPlots==1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+## Type of flood by continent
+p1 <- ggplot(subset(flood2)) +
+  aes(year, peopleDead, fill=mainCause1) +
+  stat_summary(fun.y = "sum", geom = "bar") 
+
+p2 <- ggplot(subset(flood2)) +
+  aes(year, peopleDisplaced, fill=mainCause1) +
+  stat_summary(fun.y = "sum", geom = "bar")+
+   guides(fill = FALSE)
+
+multiplot(p1, p2, cols=2)
+```
+
+Based on these 2 graphs, we note 2 things:
+
+ + Some floods have terrible impact on human lives. For example, in Thailand, in 2004 when 160,000 people died in a tsunami. Therefore, we assume that the number of dead is not linked to the characteristic of the country.
+ + When we look at the number of people displaced, we see a very different patern. It is quite stable and the main event that push people to move is Monsoon. Furthermore, we know that monsoon tend to happend in a very specific region of the world, mainly south east Asia.
+ 
+
+## Characteristics of country and floods' impact
+
+In what type of countries does flood have a greater impact on population?
+To answer this question we will gather and merge data about Human development index (HDI), life expectancy, expected number of school year, Gross National Income (GNI) per capita.
+
+```{r, echo=FALSE}
+## People displaced/magnitude of flood by year, HDIclass and sub-continent
+ggplot(subset(flood2, mainCause1 = "Dam failure")) +
+  aes(year, peopleDisplaced, fill= HDIclass) +
+  stat_summary(fun.y = "sum", geom = "bar") +
+  facet_wrap(~region, ncol = 3)
+```
+
+When we look at people displaced, we see that it mainly affect Asian and African countries and mainly countries with low (below 0.6) or medium (between 0.6 and 0.75) HDI.
+
+## Regression Model
+
+
+
+```{r, echo=FALSE}
+summary(lm(peopleDead ~ HDI + lifeExp+ GNIPerCapita, data = flood2))$coefficients
+
+
+```
+
+The regression analysis confirm that country characteristics does not impact the number of dead people per flood. 
+
+
+```{r, echo=FALSE}
+fit1 =  lm(peopleDisplaced ~ HDI + lifeExp+ GNIPerCapita, data = flood2)
+summary(fit1)
+```
+
+There is a true correlation between the stage of development of a country and the number of displaced people during floods.
+
+## Main finding
+
+When it comes to death toll, no country is protected against a huge event as a huge tsunami or a hurricane. But facing heavy rain, developed country have better infrastructure and a greater capacity to take care of the people touched by such event. They also have the ability to quickly repair in order to make the population suffer a minimum time so that they don't have to move.
+
+
+
+
