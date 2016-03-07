@@ -1,0 +1,112 @@
+---
+title: "Pawel Markdown"
+author: "Pawel Buczak"
+date: "March 6, 2016"
+output: html_document
+---
+
+##Start R Markdown Pawel
+
+Given the wide scope of the data, we initially visually explore the flood data to see if there are any immediate geographic trends noticeable in the data. To this end, we look at the combination of location of flood, flood cause, and flood magnitude:
+
+```{r, echo=FALSE, warning = FALSE, message=FALSE, fig.width=10, fig.height = 5}
+library(ggplot2)
+library(maps)
+
+cleanGlobalFloodData = read.csv("C:/Users/14z/Documents/Github/edavPersonal/cleanGlobalFloodData.csv")
+cleanGlobalFloodData$dateBegan = as.Date.factor(cleanGlobalFloodData$dateBegan, "%m/%d/%Y")
+cleanGlobalFloodData$dateEnded = as.Date.factor(cleanGlobalFloodData$dateEnded, "%m/%d/%Y")
+
+causes = c("Heavy Rain", "Monsoon", "Hurricane/Tropical Storm", 
+           "Snow/Ice Melt", "Dam Failure")
+
+causeColors = c("white", "#ffff33", "#ff7f00", "#756bb1", "#e41a1c",
+                "#4daf4a") #Other color
+
+globalFloods = 
+  cbind(subset(cleanGlobalFloodData, 
+                 !(mainCause1 %in% causes[] & 
+                     mainCause2 %in% causes[] &
+                     mainCause3 %in% causes[]))
+        [, c("centroidX", "centroidY", "magnitude", "dateBegan", "dateEnded")],
+        FloodType = "Other")
+
+for(x in 1:length(causes)){
+  globalFloods = rbind(globalFloods, 
+                       cbind(subset(cleanGlobalFloodData, 
+                                      (mainCause1 == causes[x] | 
+                                         mainCause2 == causes[x] |
+                                         mainCause3 == causes[x]))
+                             [, c("centroidX", "centroidY", "magnitude", "dateBegan", "dateEnded")],
+                             FloodType = causes[x]
+                       )                 
+  )
+  
+}  
+
+
+ggplot() +
+  borders("world", colour = "gray10", fill="gray40") + 
+  theme(panel.background = element_rect(fill = "gray80"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(colour = "black")
+  ) + 
+  coord_cartesian(xlim = c(-180, 180), ylim=c(-60, 90)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  
+  geom_point(data = globalFloods, 
+             aes(x = centroidX, y = centroidY, color = FloodType, size = magnitude),
+             alpha = 0.3) +
+  scale_color_manual(breaks = append(causes, "Other"), 
+                     limits = append(causes, "Other"), 
+                     values = causeColors) +
+  scale_size(trans = "exp", range=c(0, 10), limits = c(0,9), breaks=c(4, 5, 6, 7, 8)) + 
+  guides(color = guide_legend(override.aes = list(size = 10), 
+                              title = "Flood Cause"),
+         size = guide_legend(title = "Flood Magnitude")) +
+  theme(legend.key = element_rect(fill = "gray70"))
+
+
+
+
+
+```
+
+This confirms some initial beliefs we may have about floods. For example, tropical storms & hurricanes primarily affect southeast North America and Asia. Snow & ice melt is mostly prevalent at higher latitudes. Monsoons mostly occur on the Indian subcontinent. Since there seem to be a lot of floods in south and east Asia, we take a closer look here:
+
+```{r, echo=FALSE, fig.width=8,fig.height=4}
+
+ggplot() +
+  borders("world", colour = "gray10", fill="gray40") + 
+  theme(panel.background = element_rect(fill = "gray80"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_line(colour = "black")
+  ) + 
+  coord_cartesian(xlim = c(60, 130), ylim=c(0, 40)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  
+  geom_point(data = globalFloods, 
+             aes(x = centroidX, y = centroidY, color = FloodType, size = magnitude),
+             alpha = 0.3) +
+  scale_color_manual(breaks = append(causes, "Other"), 
+                     limits = append(causes, "Other"), 
+                     values = causeColors) +
+  scale_size(trans = "exp", range=c(0, 20), limits = c(0,9), breaks=c(4, 5, 6, 7, 8)) + 
+  guides(color = guide_legend(override.aes = list(size = 10), 
+                              title = "Flood Cause"),
+         size = guide_legend(title = "Flood Magnitude")) +
+  theme(legend.key = element_rect(fill = "gray70"))
+
+```
+
+Given the amount of monsoon flooding there is on the Indian subcontinent, we decide to take a closer look at how flooding interacts through a time period with our other data source - geopotential height data. We choose a high flood period - summer and autumn 2007 - to best illustrate this interaction.
+
+###Animation here
+
+This animation shows every day from the beginning of June to the end of October 2007. Floods appear on the map once they have "began" according to the flood data and disappear in a similar fashion. Geopotential height is indicated by the shading, which is red for lower levels and blue for higher levels. The animation suggests that lower levels of geopotential height tend to occur before or at the beginning of floods. 
+
+The animation also points out another difficulty in predicting the severity of floods - not only does the actual rainfall (or proxy for it such as geopotential height) matter, but geography also plays a role. Note that there are many floods along the northern portion of India and into Bangladesh, despite there not being extreme values of geopotential height during this time. This, however, is related to the fact that this is where the mighty Ganges river runs, and rivers such as this can drain very large areas. Thus flooding can potentially occur long after and far away from the heavy rains. 
+
+
