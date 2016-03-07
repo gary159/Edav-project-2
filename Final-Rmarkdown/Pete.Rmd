@@ -1,0 +1,80 @@
+---
+title: "Pete"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
+setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
+floods <- read.csv('./data/cleanGlobalFloodDataWithRegions.csv')
+```
+
+## Understanding Floods: Where They Happen and Why
+What is the typical size of a flood? Does this change by cause, location, or some other factor? 
+
+```{r}
+library(ggplot2)
+ggplot(floods, aes(affectedSqKm)) +
+  geom_histogram(bins=100)
+
+```
+
+What is the typical duration of the flood?
+
+```{r}
+library(ggplot2)
+ggplot(floods, aes(durationDays)) +
+  geom_histogram(bins=100)
+
+```
+
+How are floods distributed in space?
+
+```{r}
+library(ggplot2)
+
+mapWorld <- borders("world", colour="gray50")
+m <- ggplot(floods) + mapWorld
+m <- m + geom_point(aes(x=centroidX, 
+                        y=centroidY,
+                        color='blue'),
+                    alpha=.5, size=1)
+```
+
+
+
+```{r floods}
+library(ggplot2)
+
+primaryCauses <- floods[floods$mainCause1 %in% c("Heavy Rain", "Monsoon", "Hurricane/Tropical Storm", "Snow/Ice Melt"),]
+
+mapWorld <- borders("world", colour="gray50")
+m <- ggplot(primaryCauses) + mapWorld
+m <- m + geom_point(aes(x=centroidX, 
+                        y=centroidY,
+                        color=mainCause1),
+                    alpha=.5, size=1)
+m + facet_wrap(facets= ~mainCause1, ncol=2)
+
+```
+
+Heavy Rain Density
+
+```{r}
+m1 <- NULL
+mapWorld <- borders("world", colour="gray50")
+m1 <- ggplot() + mapWorld
+m1 + stat_density2d(aes(x=centroidX, y=centroidY, fill=..level.., alpha = ..level..), 
+                    size=.5, data=floods[floods$mainCause1=='Heavy Rain',], geom="polygon")
+```
+
+Monsoon Density
+
+```{r}
+m2 <- NULL
+mapWorld <- borders("world", colour="gray50", ylim = c(-15, 35), xlim = c(67,110))
+m2 <- ggplot() + mapWorld
+m2 + stat_density2d(aes(x=centroidX, y=centroidY, fill=..level.., alpha = ..level..), 
+                    size=.5, geom="polygon", 
+                    data=floods[floods$mainCause1=='Monsoon',])
+```
