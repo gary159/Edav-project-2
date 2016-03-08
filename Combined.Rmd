@@ -1,7 +1,7 @@
 ---
 title: "Group 7"
 output: html_document
-authors: "Jae Hee Hwang, Junhui Liao, Peter Darche, Gary Sztajnman, Pawel Buczak"
+author: "Jae Hee Hwang, Junhui Liao, Peter Darche, Gary Sztajnman, Pawel Buczak"
 date: "March 8, 2016"
 geometry: margin=2cm
 ---
@@ -140,6 +140,12 @@ m2 + stat_density2d(aes(x=centroidX, y=centroidY, fill=..level.., alpha = ..leve
 
 The density maps allow for somewhat easier interpretation of where the bulk of floods occur.  As metioned previously and as vividly indicated by the monsoon density map, densities often center near rivers and coastlines, such as the Gangese River Delta.
 
+<img src="/Users/pdarche/Desktop/qmss/spring2016/stat4701/Edav-project-2/Final-Rmarkdown/Pawel Final/indiaDaily2007/india.gif"/>
+
+The animation shows every day from the beginning of June to the end of October 2007. Floods appear on the map once they have "began" according to the flood data and disappear in a similar fashion. Geopotential height is indicated by the shading, which is red for lower levels and blue for higher levels. The animation suggests that lower levels of geopotential height tend to occur before or at the beginning of floods. 
+
+The animation also points out another difficulty in predicting the severity of floods - not only does the actual rainfall (or proxy for it such as geopotential height) matter, but geography also plays a role. Note that there are many floods along the northern portion of India and into Bangladesh, despite there not being extreme values of geopotential height during this time. This, however, is related to the fact that this is where the mighty Ganges river runs, and rivers such as this can drain very large areas. Thus flooding can potentially occur long after and far away from the heavy rains. 
+<br>
 
 
 ## Part 2 - Relationship between Geopotential Heigh & Flood Magnitude
@@ -228,13 +234,11 @@ Both the shaped areas represent the 99% confident level in the regression model.
 ### Conclusion
 From the above res
 ult, we can not find a statiscal significant relationship between geopotential heigh and flood magnitude in the Uinted States from 2012 to 2013 and 2014 to 2015 data.
+<br>
+
 
 ## Part 3 - Understanding the Impact of Floods
-Flood have a huge impact on population and economy.
-Heavy rain leads to destruction, death, displacement, healness, reparations.
-Some countries may receive more floods based on its location (for example India) but some countries also don't have the capacity to prevent, prepare population, manage flood and repare.
-
-In this analysis we will try to analyse what characteristic influence the impact of a flood.
+Flood have a huge impact on population and economy.  Heavy rain leads to destruction, death, displacement, healness, reparations.  Some countries may receive more floods based on its location (for example India) but some countries also don't have the capacity to prevent, prepare population, manage flood and repare.  In this analysis we will try to analyse what characteristic influence the impact of a flood.
 
 
 ```{r}
@@ -291,8 +295,6 @@ datc$GDPlevel <- ifelse(datc$Income.Group.OECD == "High income: OECD", 5,
 #       data=datc,
 #       main="Income group Distributionse of Countries in Each Subregion")
 ```
-
-Different region groups have countries of varying income levels. 
 
 ### Magnitude and Displacement/Death
 
