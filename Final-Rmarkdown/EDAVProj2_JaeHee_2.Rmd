@@ -1,0 +1,279 @@
+---
+title: "Untitled"
+author: "Jae Hee Hwang"
+date: "March 6, 2016"
+output: html_document
+---
+
+```{r, echo = FALSE}
+setwd("/Users/jaeheehwang/Desktop/Immediate/EDAV2")
+# Import Data
+library(plotly)
+library(ggplot2)
+library(package = "lattice")
+library(ggmap)
+library(source.gist)
+library(rworldmap)
+library("Hmisc")
+library(base)
+library(nlme) 
+
+dat <- read.csv ("cleanGlobalFloodDataWithRegionsGDP.csv",header=TRUE, stringsAsFactors=FALSE, fileEncoding="latin1")
+datc <- dat
+
+########################################################################
+#### AREA AFFECTED
+# Let's see how the distribution of affected sqkm range. 
+areaInterval <- cut2(datc$affectedSqKm, c(10000,50000,100000,10000000))
+
+# Let's divide affected area into small, medium, large, or very large intervals. 
+datc$affected <- ifelse(datc$affectedSqKm < 10000, "Small", ifelse(datc$affectedSqKm < 50000, "Medium", ifelse(datc$affectedSqKm < 100000, "Large", "Very Large")))
+datc$affected = factor(datc$affected,levels=c("Small", "Medium", "Large", "Very Large"), ordered = TRUE) 
+########################################################################
+#### People Dead
+deadInterval <- cut2(datc$peopleDead, c(10,50,100,10000000))
+
+# Let's divide people dead into intervals
+datc$dead <- ifelse(datc$peopleDead < 10, "Under 10", ifelse(datc$peopleDead < 50, "10-50", ifelse(datc$peopleDead < 100, "50-100", "Over 100")))
+datc$dead = factor(datc$dead,levels=c("Under 10", "10-50","50-100","Over 100"), ordered = TRUE) 
+
+########################################################################
+#### People displaced
+displacedInterval <- cut2(datc$peopleDisplaced, c(30,5000,100000,100000000))
+
+# Let's divide people displaced into intervals
+datc$displaced <- ifelse(datc$peopleDisplaced < 30, "Under 30", ifelse(datc$peopleDisplaced < 5000, "30-5000", ifelse(datc$peopleDisplaced < 100000, "5000-100000", "Over 100000")))
+datc$displaced = factor(datc$displaced,levels=c("Under 30", "30-5000","5000-100000","Over 100000"), ordered = TRUE) 
+
+########################################################################
+#### Duration
+durationInterval <- cut2(datc$durationDays, c(5, 10, 20, 500))
+
+# Let's divide duration into intervals
+datc$duration <- ifelse(datc$durationDays < 5, "Under 5", ifelse(datc$durationDays < 10, "5-10", ifelse(datc$durationDays < 20, "10-20", "Over 20")))
+datc$duration = factor(datc$duration,levels=c("Under 5", "5-10","10-20","Over 20"), ordered = TRUE) 
+
+#########################################################################
+datc$incomeGroup <- datc$Income.Group.OECD
+datc$incomeGroup = factor(datc$incomeGroup, levels = c("Low income", "Lower middle income", "Upper middle income","High income: nonOECD", "High income: OECD"), ordered = TRUE)
+
+datc$GDPlevel <- ifelse(datc$Income.Group.OECD == "High income: OECD", 5, 
+                        ifelse(datc$Income.Group.OECD == "High income: nonOECD", 4,
+                               ifelse(datc$Income.Group.OECD == "Upper middle income", 3,
+                                      ifelse(datc$Income.Group.OECD == "Lower middle income", 2, 1))))
+
+```
+
+
+```{r, echo = FALSE}
+#bwplot(~datc$incomeGroup|factor(datc$sub_region),
+#       xlab="Subregions", 
+#       ylab="Income Group Distribution", 
+#       scales = list(x = list(labels = c("a", "Low Income", "Lower Middle Income", "Upper Middle Income", "High Income","High Income OECD")), rot = 90),
+#       data=datc,
+#       main="Income group Distributionse of Countries in Each Subregion")
+```
+
+Different region groups have countries of varying income levels. 
+
+#Magnitude and Displacement/Death
+
+```{r, echo = FALSE}
+# People displacement and country income group. 
+dotplot(datc$peopleDisplaced ~ datc$magnitude | datc$incomeGroup,
+       xlab="Magnitude", 
+       ylab="People Displaced", 
+       main="Displacement by Magnitude Grouped by Income Level",
+       scales=list(y=list(draw = FALSE)),
+       data = datc)
+
+dotplot(datc$peopleDead ~ datc$magnitude | datc$incomeGroup,
+       xlab="Magnitude", 
+       ylab="People Dead", 
+       main="Death by Magnitude Grouped by Income Level",
+       scales=list(y=list(draw = FALSE)),
+       data = datc)
+
+
+```
+#Displacement
+
+The scatterplot of people displaced for high income is concentrated in the bottom, which means that High Income countries tend to not displace people much regardless of the magnitude of the flood. 
+
+In contrast, low income, lower middle income, and upper middle income countries seem to be more middle-heavy. 
+These countries also seem to displace more people as magnitude increases. 
+
+#Deaths
+The scatterplot of people dead for high income is very bottom-heavy, even more so than in displacement. 
+As income level goes down, we notice that a lot more points are plotted on top. 
+We can quantify this finding further by running a regression analysis by country income level. 
+
+
+```{r}
+lmList(peopleDisplaced ~ magnitude | incomeGroup, data = datc, na.action = na.omit)
+lmList(peopleDead ~ magnitude | incomeGroup, data = datc, na.action = na.omit)
+
+```
+
+#Displacement
+There is a trend of the slope coefficient on the variable "magnitude" as income level goes down. 
+This means that the higher the magnitude, the higher number of people are displaced as country income level goes down. 
+Intuitively, this can be interepreted as since high-income countries are better prepared for floods in all magnitude, they tend to displace only few people regardless of magnitude. 
+However, countries with low income do not have resources to prepare for floods with large magnitude. 
+Therefore, they tend to displace more people as magnitude intensifies. 
+
+#Death
+Similarly, the coefficient on magnitude to predict number of death is not even positive for high income OECD countries. However, as the income level goes down, the importance of magnitude in predicting the number of deaths increases. The reasoning is the same as displacement. Countries with high income are better prepared, and they take good measures to prevent deaths from happeneing, even in cases of severe magnitudes. Countries with lower incomes do not have such resources. 
+
+Now, let's look at differing effects of affected area by country income group. 
+
+#Size of Affected Area and Displacement/Death
+```{r echo = FALSE}
+dotplot(datc$displaced ~ datc$affectedSqKm | datc$sub_region,
+       xlab="Size of Affected Area", 
+       ylab="People Displaced", 
+       main="Displacement by Size of Affected Area Grouped by Income Level",
+       data = datc)
+dotplot(datc$dead ~ datc$affectedSqKm | datc$incomeGroup, 
+       xlab="Size of Affected Area", 
+       ylab="Deaths", 
+       main="Deaths by Size of Affected Area Grouped by Income Level",
+       data = datc)
+
+```
+
+#Displacement
+Similar to magnitude, in High Income OECD countreis, the scatterplot is bottom-heavy. Regardless of the size of the affected area, very few people were displaced. However for Lower middle income and upper middle income countries, the scatterplot is top-heavy, which means that the larger the affected area, the more people were displaced. 
+
+#Death
+The correlation between number of people dead and the area of affected region seems to be lower for deaths. Again, for High-OECD countries, the scatterplot is very much bottom-heavy. 
+
+```{r}
+lmList(peopleDisplaced ~ affectedSqKm | incomeGroup, data = datc, na.action = na.omit)
+lmList(peopleDead ~ affectedSqKm | incomeGroup, data = datc, na.action = na.omit)
+```
+
+The regression analysis indicates that similar trend of strong correlation beween area affected and number of people displaced as the country income level goes down. 
+
+The relationship between the size of area affected and number of deaths seems to be much weaker. 
+Interestingly, high income OECD countries and upper middle income countries have a negative relationship between affected square kilometers and number of deaths. While the coefficient is not very large, this can mean that when there are floods that affect large areas, countries predict it and take measures to prevent deaths. 
+
+More detailed data can be found when countries are analyzed at a subregion level. 
+
+Size of Affected Area 
+```{r, echo = FALSE}
+dotplot(datc$displaced ~ datc$affectedSqKm | datc$region,
+       xlab="Size of Affected Area", 
+       ylab="People Displaced", 
+       main="Displacement by Size of Affected Area Grouped by Region",
+       data = datc)
+
+dotplot(datc$dead ~ datc$affectedSqKm | datc$region, 
+       xlab="Size of Affected Area", 
+       ylab="People Dead", 
+       main="Death by Size of Affected Area Grouped by Region",
+       data = datc)
+lmList(peopleDisplaced ~ affectedSqKm | region, data = datc, na.action = na.omit)
+lmList(peopleDead ~ affectedSqKm | region, data = datc, na.action = na.omit)
+```
+
+When we look at the number of people displaced for different sizes of areas affected by region, we see that differnet continents have different trends. 
+The regression suggests that Asia displaces the most people and displaces more people as affected area increases.
+This is probably partly due to the positive relationship between affected area and magnitude as well. 
+Larger affected area means more intense magnitude, which leads to displacing more people. 
+(see regression below)
+
+Oceania seems to displace fewest people as baseline and also doesn't seem to displace much more people as affected area increases. 
+This can be partly due to the fact that Oceania does not experience floods that cover as much area as Asia, as illustrated by the box and whiskers plot below. 
+
+```{r, echo = FALSE}
+lm(datc$affectedSqKm ~ datc$magnitude)
+bwplot(~datc$affectedSqKm|factor(datc$region),
+       data = datc,
+       xlab="Affected Area", 
+       main="Size of Affected Area Distribution by Region",
+       scales=list(x=list(draw = FALSE))
+       ) 
+
+```
+
+```{r, echo = FALSE}
+#dotplot(datc$displaced ~ datc$affectedSqKm | datc$sub_region,
+#       xlab="Size of Affected Area", 
+#       ylab="People Displaced", 
+#       main="Displacement by Size of Affected Area Grouped by Region",
+#       data = datc)
+
+#dotplot(datc$dead ~ datc$affectedSqKm | datc$sub_region, 
+#       xlab="Size of Affected Area", 
+#       ylab="People Dead", 
+#       main="Death by Size of Affected Area Grouped by Region",
+#       data = datc)
+
+#Subregions that displaced more people as the size of affected region increased were South America, Eastern Asia, and Southern Asia. 
+#Subregions that displaced very few people regardless of the size of the affected area were western Asia and Austria and New Zealand. 
+
+#Subregions that experienced more deaths as the size of affected region increased were Southern Asia and Eastern Asia
+#Subregions that experienced few deaths regardless of the size of the affected area were Western Asia and Austria/New Zealand. 
+
+```
+
+
+#Magnitudes by Floods of Different Causes
+
+```{r, echo = FALSE}
+
+bwplot(~datc$magnitude|factor(datc$mainCause1),data=datc,col="blue",
+       xlab = "Magnitude",
+       main="Magnitude of Floods Caused by Different Main Causes")
+```
+
+While Landslides and Avalanches seem to cause floods only between magnitudes of 4 and 5, Heavy rain seems to cause floods of varying degrees of magnitudes. 
+
+
+#Size of Affected Areas by Floods of Different Causes
+
+```{r, echo = FALSE}
+bwplot(~datc$affected|factor(datc$mainCause1),data=datc,col="blue",
+       xlab = "Size of Area Affected",
+       main="Size of Area Affected by Different Main Causes")
+```
+
+Snow/Ice Melt and Tsunami can affect a wide array of sizes of lands. 
+Landslides/Avalanches seem to usually affect small areas, and Monsoons seem to affect large areas. 
+
+
+```{r, echo = FALSE}
+bwplot(~datc$displaced|factor(datc$mainCause1),data=datc,col="blue",
+       xlab = "Number of Displacements",
+       main="Number of Displaced People by Main Causes")
+
+bwplot(~datc$dead|factor(datc$mainCause1),data=datc,col="blue",
+       xlab = "Number of Deaths",
+       main="Number of Deaths by Main Causes")
+```
+
+Monsoons and Hurricanes/Tropical Storm seem to displace many people while Landslides/avalanches and snow/ice melt seem to usually displace fewer people. 
+Tsunamis always seem to kill many people, while snow/ice melt seems to always kill only few people. 
+
+#Damage Caused by Floods 
+```{r, echo = FALSE}
+dotplot(datc$damageUsd ~ datc$affectedSqKm | datc$sub_region, 
+       xlab="Size of Affected Area", 
+       ylab="Damage USD", 
+       main="Damage USD by Size of Affected Area Grouped by Region",
+       scales=list(y=list(draw = FALSE)),
+       data = datc)
+```
+
+Northern America and Northern Europe seem to have very high starting point of damage in USD probably because since the GDP is high, when damage is done, it is more expensive to recover from the damage. Middle Africa seems to have the lowest starting point in terms of damage in USD. 
+
+```{r, echo = FALSE}
+hist <- ggplot(datc, aes(x = datc$sub_region, fill = datc$mainCause1))
+hist + geom_bar(color = "black", aes(fill = datc$mainCause1, position = "fill"))+
+  labs(title = "Main Causes by Region", x = "Region", y = "Percent") + 
+  scale_fill_discrete(name="Main Causes") + guides(fill = guide_legend(reverse=TRUE))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+South-Eastern Asia, followed by Southern Asia and then Eastern Asia and Northen America, experience the most number of floods. For each region, over 50% or more floods are caused by heavy rain. In the case of Southern Asia, a large portion of floods are caused by Monsoon. Hurricane/Tropical Storms seem to happen quite often in South-Eastern Asia and Eastern Asia. 
