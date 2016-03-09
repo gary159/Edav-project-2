@@ -23,8 +23,9 @@ library("Hmisc")
 library(plotly)
 library(scales)
 library(RColorBrewer)
-setwd("/Users/jaeheehwang/Downloads/Edav-project-2-master 2/")
+#setwd("/Users/jaeheehwang/Downloads/Edav-project-2-master 2/")
 #setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
+setwd("C:/Users/14z/Documents/Github/edavProject2/")
 
 ### Junhui
 flood <- read.csv("./data/floodClean.csv")
@@ -118,7 +119,7 @@ m <- m + geom_point(aes(x=centroidX,
 m + facet_wrap(facets= ~mainCause1, ncol=2)
 ```
 
-This plot shows the spatial distribution of floods by cause.  Not surprisingly, the plot indicates that the geography has a significant effect on the type of flooding experinced in different parts of the world.  Floods due to Monsoon, for example happen primarily in the Indian Ocean and Southeast Asia; floods cause by snow melt happen at more northerly mountainous regions; floods caused by hurricaines and tropical storms happen mostly along the coast in warmer, more tropical latitudes.  Floods caused by heavy rainfall were present all over the world (except in expected locations like desserts).  Futher (and also not surprisingly), we noticed that floods occur most frequently near rivers and coastlines. 
+This plot shows the spatial distribution of floods by cause.  Not surprisingly, the plot indicates that the geography has a significant effect on the type of flooding experinced in different parts of the world.  Floods due to Monsoon, for example happen primarily in the Indian Ocean and Southeast Asia; floods cause by snow melt happen at more northerly mountainous regions; floods caused by hurricaines and tropical storms happen mostly along the coast in warmer, more tropical latitudes.  Floods caused by heavy rainfall were present all over the world (except in expected locations like desserts).  Further (and also not surprisingly), we noticed that floods occur most frequently near rivers and coastlines. 
 
 ```{r}
 ################### Heavy Rain Density 
@@ -138,13 +139,23 @@ m2 + stat_density2d(aes(x=centroidX, y=centroidY, fill=..level.., alpha = ..leve
                     data=floods[floods$mainCause1=='Monsoon',], show.legend = FALSE) + labs(title="Monsoon Density")
 ```
 
-The density maps allow for somewhat easier interpretation of where the bulk of floods occur.  As metioned previously and as vividly indicated by the monsoon density map, densities often center near rivers and coastlines, such as the Gangese River Delta.
+The density maps allow for somewhat easier interpretation of where the bulk of floods occur.  As mentioned previously and as vividly indicated by the monsoon density map, densities often center near rivers and coastlines, such as the Ganges River Delta.
 
-<img src="/Users/pdarche/Desktop/qmss/spring2016/stat4701/Edav-project-2/Final-Rmarkdown/Pawel Final/indiaDaily2007/india.gif"/>
+Another to cut this data is to look at the changing patterns through time. Here we animate the world map to show floods in each year.
 
-The animation shows every day from the beginning of June to the end of October 2007. Floods appear on the map once they have "began" according to the flood data and disappear in a similar fashion. Geopotential height is indicated by the shading, which is red for lower levels and blue for higher levels. The animation suggests that lower levels of geopotential height tend to occur before or at the beginning of floods. 
+<img src="https://github.com/gary159/Edav-project-2/raw/master/Final-Rmarkdown/worldMapFloodsByYear.gif"/>
 
-The animation also points out another difficulty in predicting the severity of floods - not only does the actual rainfall (or proxy for it such as geopotential height) matter, but geography also plays a role. Note that there are many floods along the northern portion of India and into Bangladesh, despite there not being extreme values of geopotential height during this time. This, however, is related to the fact that this is where the mighty Ganges river runs, and rivers such as this can drain very large areas. Thus flooding can potentially occur long after and far away from the heavy rains. 
+While there is a lot of information here, it is more instructive to pick a particular area, and compare flooding to geopotential height to visually look for any correlations that may exist. We look at India in the summer of 2007 due to the large amount of flooding.
+
+<img src="https://github.com/gary159/Edav-project-2/raw/master/Final-Rmarkdown/Pawel%20Final/indiaDaily2007/india.gif"/>
+
+The animation shows every day from the beginning of June to the end of October 2007. Floods appear on the map once they have "began" according to the flood data and disappear in a similar fashion. Geopotential height is indicated by the shading, which is red for lower levels and blue for higher levels. 
+
+When we focus the animation on a select number of days in June, it suggests that lower levels of geopotential height tend to occur before or at the beginning of floods:
+
+<img src="https://github.com/gary159/Edav-project-2/raw/master/Final-Rmarkdown/Indiafocus.gif"/>
+
+The initial animation also points out another difficulty in predicting the severity of floods - not only does the actual rainfall (or proxy for it such as geopotential height) matter, but geography also plays a role. Note that there are many floods along the northern portion of India and into Bangladesh, despite there not being extreme values of geopotential height during this time. This, however, is related to the fact that this is where the mighty Ganges river runs, and rivers such as this can drain very large areas. Thus flooding can potentially occur long after and far away from the heavy rains. 
 <br>
 
 
