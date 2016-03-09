@@ -150,6 +150,7 @@ The animation also points out another difficulty in predicting the severity of f
 
 ## Part 2 - Relationship between Geopotential Heigh & Flood Magnitude
 
+
 This section explores the relationship between Geopotential Heigh and Flood Magnitude by two major datasets. This first one is the "NOAA_Daily_phi_500mb.nc", which provides the geopotential heigh values and the second one is the "GlobalFloodsRecord.xls", which provides different kinds of flood data. In addition, we focous on both dataset in 2012 to 2013 as well as 2014 to 2015 within the region of the United States.
 
 ### Methology
@@ -234,6 +235,88 @@ Both the shaped areas represent the 99% confident level in the regression model.
 ### Conclusion
 From the above res
 ult, we can not find a statiscal significant relationship between geopotential heigh and flood magnitude in the Uinted States from 2012 to 2013 and 2014 to 2015 data.
+=======
+This section explores the relationship between Geopotential Heigh and Flood Magnitude by two major datasets. The first one is the "NOAA_Daily_phi_500mb.nc", which provides the geopotential heigh values and the second one is the "GlobalFloodsRecord.xls", which provides different kinds of flood data. In addition, we focous our analysis from 2012 to 2013 as well as from 2014 to 2015 within the region of the United States.
+
+### Methology
+scatter plot is utilized to glance the relationship between geopotential heigh values and flood magnitude. Besides, a simple linear regression models is used to determine the relationship namely:
+$$floodMagnitude = \beta_0 + \beta_1 * geopotentialHeigh$$
+
+### Data
+All data have been cleaned up and exported as csv file. The first five corresponding geopotential heigh and magnitude values from 2012 to 2013 are displayed below. Since each flood appearens in a period of time, the corresponding geopotential heigh value is taking by the mean during that period of time
+
+```{r}
+head(phi_magni1213)
+```
+
+Below are the data values from 2014 to 2015. Same as above, the corresponding geopotential heigh value is takeing by the mean during that period of time
+
+```{r, echo=FALSE}
+head(phi_magni1415)
+```
+
+### Result
+```{r}
+# Visualization with the Data
+# Bubble plot for phi from 2012 to 2013
+bubble.1213 <- ggplot(phi_magni1213, aes(phi_value1213, magnitude1213, size = phi_value1213))
+bubble.1213 <- bubble.1213 + geom_point(colour = "red") + scale_size(range = c(3, 6)) + xlab("Geopotential Heigh(phi) from 2012 to 2013") + ylab("Flood Magnitude from 2012 to 2013")
+# Bubble plot for phi from 2014 to 2015
+bubble.1415 <- ggplot(phi_magni1415, aes(phi_value1415, magnitude1415, size = phi_value1415))
+bubble.1415 <- bubble.1415 + geom_point(colour = "red") + scale_size(range = c(2, 6)) + xlab("Geopotential Heigh(phi) from 2014 to 2015") + ylab("Flood Magnitude from 2014 to 2015")
+# Display 2 graphics in a single window
+grid.arrange(bubble.1213, bubble.1415, ncol = 2, top = "Scatter Geopotential Height & Magnitude")
+```
+
+The above graphics display the relationship between geopotential heigh and flood magnitude in an Euclidean space, where the x axis represents geopotential heigh(phi) value and the y axis preresents the flood magnitude value. The size of the bubble also indicate how large the corresponding phi value is.
+
+The correlation between these variables are also included below
+
+geopotential heigh and flood magnitude correlation from 2012-2013:
+```{r}
+# Explore the correlation between phi & magnitude
+cor.phi.mag1213 <- cor(phi_magni1213$phi_value1213, phi_magni1213$magnitude1213)
+cor.phi.mag1213
+```
+
+geopotential heigh  and flood magnitude correlation from 2014-2015:
+```{r}
+cor.phi.mag1415 <- cor(phi_magni1415$phi_value1415, phi_magni1415$magnitude1415)
+cor.phi.mag1415
+```
+
+finally a simple linear regression model is being appied to test the relationship.
+
+geopotential heigh  and flood magnitude regression from 2012-2013:
+
+```{r, echo = F}
+###########################################
+# Fitting a linear regression for year 12 & 13 data
+lm.phi.mag1213 <- lm(magnitude1213 ~ phi_value1213, data = phi_magni1213)
+sp1213 <- ggplot(phi_magni1213, aes(phi_value1213, magnitude1213))
+sp1213 <- sp1213 + geom_point(colour = "red") + stat_smooth(method = lm, level = 0.99) + xlab("Geopotential Height(phi) from 2012 to 2013 ") + ylab("Flood Magnitude from 2012 to 2013")
+```
+
+geopotential height  and flood magnitude regression from 2014-2015:
+
+```{r, echo = F}
+# Fitting a linear regression for year 14 & 15 data
+lm.phi.mag1415 <- lm(magnitude1415 ~ phi_value1415, data = phi_magni1415)
+sp1415 <- ggplot(phi_magni1415, aes(phi_value1415, magnitude1415))
+sp1415 <- sp1415 + geom_point(colour = "red") + stat_smooth(method = lm, level = 0.99) + xlab("Geopotential Height(phi) from 2014 to 2015") + ylab("Flood Magnitude from 2014 to 2015")
+```
+
+visualize the result:
+
+```{r}
+# Display 2 graphics in a single window
+grid.arrange(sp1213, sp1415, ncol = 2, top = "Geopotential Height & Magnitude Linear Relation")
+```
+
+Both of the shaped areas represent the 99% confident level in the regression model.
+
+### Conclusion
+From the above result, we can not find a statiscal significant relationship between geopotential height and flood magnitude in the Uinted States from 2012 to 2013 and 2014 to 2015 data. However, this is most likely due to the time correlation among the data. Therefore, a better approach is to applied time series model toward the data.
 <br>
 
 
