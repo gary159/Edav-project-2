@@ -73,14 +73,15 @@ We started our analysis by trying to get a basic sense of the properties of the 
 library(ggplot2)
 a <- ggplot(floods, aes(durationDays)) +
   geom_histogram(bins=100) +
-  labs(x = "duration (days)")
+  labs(x = "duration (days)", title = "Duration")
 
 b <- ggplot(floods, aes(affectedSqKm)) +
   geom_histogram(bins=100) + 
-  labs(x = "affected area (sq km)")
+  labs(x = "affected area (sq km)", title = "Affected Area")
 
 c <- ggplot(floods, aes(magnitude)) +
-  geom_histogram(bins=100)
+  geom_histogram(bins=100) + 
+  labs(title = "Magnitude")
 
 grid.arrange(a,b,c, nrow=2)
 
@@ -91,11 +92,11 @@ grid.arrange(a,b,c, nrow=2)
 ```{r}
 d <- ggplot(floods, aes(peopleDisplaced)) +
   geom_histogram(bins=100) + 
-  labs(x = "number of people displaced")
+  labs(x = "number of people displaced", title = "People Displaced")
 
 e <- ggplot(floods, aes(peopleDead)) +
   geom_histogram(bins=100) + 
-  labs(x = "number of people killed")
+  labs(x = "number of people killed", title = "People Killed")
 
 grid.arrange(d,e, nrow=2)
 ```
@@ -107,7 +108,7 @@ Many of the above plots mostly follow a 'power law' distribution, with the bulk 
 ```{r floods}
 library(ggplot2)
 
-primaryCauses <- floods[floods$mainCause1 %in% c("Heavy Rain", "Monsoon", "Hurricane/Tropical Storm", "Snow/Ice Melt", "Dam Failure", "Landslides/Avalanches", "Tsunami", "Storm/Tidal Surge"),]
+primaryCauses <- floods[floods$mainCause1 %in% c("Heavy Rain", "Monsoon", "Hurricane/Tropical Storm", "Snow/Ice Melt", "Dam Failure", "Landslides/Avalanches"),]
 
 mapWorld <- borders("world", colour="gray50")
 m <- ggplot(primaryCauses) + mapWorld
@@ -115,7 +116,7 @@ m <- m + geom_point(aes(x=centroidX,
                         y=centroidY,
                         color=mainCause1),
                     alpha=.5, size=1, show.legend=FALSE)
-m + facet_wrap(facets= ~mainCause1, ncol=2)
+m + facet_wrap(facets= ~mainCause1, ncol=2) + labs(title = "Spatial Distribution of Floods by Cause")
 
 ```
 
