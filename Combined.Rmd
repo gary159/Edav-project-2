@@ -23,8 +23,8 @@ library("Hmisc")
 library(plotly)
 library(scales)
 library(RColorBrewer)
-
-setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
+setwd("/Users/jaeheehwang/Downloads/Edav-project-2-master 2/")
+#setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
 
 ### Junhui
 flood <- read.csv("./data/floodClean.csv")
@@ -382,26 +382,41 @@ Interestingly, high income OECD countries and upper middle income countries have
 More detailed data can be found when countries are analyzed at a subregion level. 
 
 Size of Affected Area 
-
 ```{r, echo = FALSE}
-dotplot(datc$displaced ~ datc$affectedSqKm | datc$sub_region,
+dotplot(datc$displaced ~ datc$affectedSqKm | datc$region,
        xlab="Size of Affected Area", 
        ylab="People Displaced", 
        main="Displacement by Size of Affected Area Grouped by Region",
        data = datc)
 
-dotplot(datc$dead ~ datc$affectedSqKm | datc$sub_region, 
+dotplot(datc$dead ~ datc$affectedSqKm | datc$region, 
        xlab="Size of Affected Area", 
        ylab="People Dead", 
        main="Death by Size of Affected Area Grouped by Region",
        data = datc)
+lmList(peopleDisplaced ~ affectedSqKm | region, data = datc, na.action = na.omit)
+lmList(peopleDead ~ affectedSqKm | region, data = datc, na.action = na.omit)
 ```
 
-Subregions that displaced more people as the size of affected region increased were South America, Eastern Asia, and Southern Asia. 
-Subregions that displaced very few people regardless of the size of the affected area were western Asia and Austria and New Zealand. 
+When we look at the number of people displaced for different sizes of areas affected by region, we see that differnet continents have different trends. 
+The regression suggests that Asia displaces the most people and displaces more people as affected area increases.
+This is probably partly due to the positive relationship between affected area and magnitude as well. 
+Larger affected area means more intense magnitude, which leads to displacing more people. 
+(see regression below)
 
-Subregions that experienced more deaths as the size of affected region increased were Southern Asia and Eastern Asia
-Subregions that experienced few deaths regardless of the size of the affected area were Western Asia and Austria/New Zealand. 
+Oceania seems to displace fewest people as baseline and also doesn't seem to displace much more people as affected area increases. 
+This can be partly due to the fact that Oceania does not experience floods that cover as much area as Asia, as illustrated by the box and whiskers plot below. 
+
+```{r, echo = FALSE}
+lm(datc$affectedSqKm ~ datc$magnitude)
+bwplot(~datc$affectedSqKm|factor(datc$region),
+       data = datc,
+       xlab="Affected Area", 
+       main="Size of Affected Area Distribution by Region",
+       scales=list(x=list(draw = FALSE))
+       ) 
+
+```
 
 ### Magnitudes by Floods of Different Causes
 
