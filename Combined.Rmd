@@ -1,31 +1,47 @@
 ---
-title: "Combined"
+title: "Group 7"
 output: html_document
-date: "February 16, 2016"
+author: "Jae Hee Hwang, Junhui Liao, Peter Darche, Gary Sztajnman, Pawel Buczak"
+date: "March 8, 2016"
 geometry: margin=2cm
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
 
 # Import Data
-library(plotly)
-library(ggplot2)
-library(package = "lattice")
+library(base)
+library(chron)
 library(ggmap)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(package = "lattice")
 library(source.gist)
 library(rworldmap)
 library("Hmisc")
-library(base)
+library(plotly)
 library(scales)
-library(chron)
 library(RColorBrewer)
+setwd("/Users/jaeheehwang/Downloads/Edav-project-2-master 2/")
+#setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
 
-setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
+### Junhui
+flood <- read.csv("./data/floodClean.csv")
+phi_magni1213 <- read.csv("./data/PhiandMagnitude1213.csv")
+phi_magni1415 <- read.csv("./data/PhiandMagnitude_1415.csv")
+# Only use the flood data in USA
+usa_ind <- which(flood$Country == "USA")
+flood.usa <- flood[usa_ind,]
 
+#### Jae Hee
 dat <- read.csv ("./data/cleanGlobalFloodDataWithRegionsGDP.csv",header=TRUE, stringsAsFactors=FALSE, fileEncoding="latin1")
 datc <- dat
+
+#### Pete
 floods <- read.csv('./data/cleanGlobalFloodDataWithRegions.csv')
 
+#### Gary
 Dev = read.csv("./data/2015_development index.csv")
 #View(Dev)
 flood2 <- read.csv("./data/cleanGlobalFloodDataWithRegionsfiltered-Index noNA.csv")
@@ -42,45 +58,51 @@ flood2$peopleDisplaced <- as.numeric(flood2$peopleDisplaced)
 flood2$HDIclass <- cut(flood2$HDI,
                      breaks=c(-Inf, 0.6, 0.75, Inf),
                      labels=c("low","medium","high"))
-#summary(flood2$HDIclass)
-#plot(flood2$HDIclass)
 ```
 
+## Introduction
+Our analysis took place in roughly 3 parts.  The first was initial analysis looking at the basic features of the flood dataset.  It sought to get a picture of the how the data was distibuted, what was typical, and to generate hypotheses about potential explanations for the variation in the dimentsions.  The second sought to examine the connection between geopotential height and flooding.  Lastly, we examined the impacts of flooding and what explained the (sometimes very large) differences in the damage done by these events.
 
-## Part 1 - Understanding the Flood Data: Where Do Floods Happen and Why
-What is the typical size of a flood? Does this change by cause, location, or some other factor? 
 
+## Part 1 - Understanding the Flood Data: Where Do Floods Happen and Why?
+We started our analysis by trying to get a basic sense of the properties of the floods recorded in the dataset.  This meant looking for things like the spatial and temporal distribution of flood, the distribution of flood size, duration, and area affected, and distributions of .  We wanted to see what variation there was between floods, and if we could get any indicators of what was explaining that variation.
+
+
+### Distributions of flood duration, affected area, and magnitude 
 ```{r}
 library(ggplot2)
-ggplot(floods, aes(affectedSqKm)) +
+a <- ggplot(floods, aes(durationDays)) +
+  geom_histogram(bins=100) +
+  labs(x = "duration (days)")
+
+b <- ggplot(floods, aes(affectedSqKm)) +
+  geom_histogram(bins=100) + 
+  labs(x = "affected area (sq km)")
+
+c <- ggplot(floods, aes(magnitude)) +
   geom_histogram(bins=100)
 
+grid.arrange(a,b,c, nrow=2)
+
 ```
 
-
-What is the typical duration of the flood?
+### Distribution of flood consequences (people killed and displaced)
 
 ```{r}
-library(ggplot2)
-ggplot(floods, aes(durationDays)) +
-  geom_histogram(bins=100)
+d <- ggplot(floods, aes(peopleDisplaced)) +
+  geom_histogram(bins=100) + 
+  labs(x = "number of people displaced")
 
+e <- ggplot(floods, aes(peopleDead)) +
+  geom_histogram(bins=100) + 
+  labs(x = "number of people killed")
+
+grid.arrange(d,e, nrow=2)
 ```
 
-How are floods distributed in space?
+Many of the above plots mostly follow a 'power law' distribution, with the bulk of the mass residing in the first 20 percent of the distribution and with a thin but long tail of extreme outlying events.  Subsetting and faceting the distributions by type, cause, severity didn't yield significantly different distributions.
 
-```{r}
-library(ggplot2)
-
-mapWorld <- borders("world", colour="gray50")
-m <- ggplot(floods) + mapWorld
-m <- m + geom_point(aes(x=centroidX, 
-                        y=centroidY,
-                        color='blue'),
-                    alpha=.5, size=1)
-```
-
-
+### Spatial distribution of floods
 
 ```{r floods}
 library(ggplot2)
@@ -92,34 +114,129 @@ m <- ggplot(primaryCauses) + mapWorld
 m <- m + geom_point(aes(x=centroidX, 
                         y=centroidY,
                         color=mainCause1),
-                    alpha=.5, size=1)
+                    alpha=.5, size=1, show.legend=FALSE)
 m + facet_wrap(facets= ~mainCause1, ncol=2)
-
 ```
 
-Heavy Rain Density
+This plot shows the spatial distribution of floods by cause.  Not surprisingly, the plot indicates that the geography has a significant effect on the type of flooding experinced in different parts of the world.  Floods due to Monsoon, for example happen primarily in the Indian Ocean and Southeast Asia; floods cause by snow melt happen at more northerly mountainous regions; floods caused by hurricaines and tropical storms happen mostly along the coast in warmer, more tropical latitudes.  Floods caused by heavy rainfall were present all over the world (except in expected locations like desserts).  Futher (and also not surprisingly), we noticed that floods occur most frequently near rivers and coastlines. 
 
 ```{r}
+################### Heavy Rain Density 
 m1 <- NULL
 mapWorld <- borders("world", colour="gray50")
 m1 <- ggplot() + mapWorld
 m1 + stat_density2d(aes(x=centroidX, y=centroidY, fill=..level.., alpha = ..level..), 
-                    size=.5, data=floods[floods$mainCause1=='Heavy Rain',], geom="polygon")
-```
+                    size=.5, data=floods[floods$mainCause1=='Heavy Rain',], geom="polygon", show.legend = FALSE) + labs(title="Heavy Rain Density")
 
-Monsoon Density
 
-```{r}
+################### Monsoon Density 
 m2 <- NULL
 mapWorld <- borders("world", colour="gray50", ylim = c(-15, 35), xlim = c(67,110))
 m2 <- ggplot() + mapWorld
 m2 + stat_density2d(aes(x=centroidX, y=centroidY, fill=..level.., alpha = ..level..), 
                     size=.5, geom="polygon", 
-                    data=floods[floods$mainCause1=='Monsoon',])
+                    data=floods[floods$mainCause1=='Monsoon',], show.legend = FALSE) + labs(title="Monsoon Density")
 ```
 
+The density maps allow for somewhat easier interpretation of where the bulk of floods occur.  As metioned previously and as vividly indicated by the monsoon density map, densities often center near rivers and coastlines, such as the Gangese River Delta.
 
-# Part 2 - Flood Impact and Economic Development
+<img src="/Users/pdarche/Desktop/qmss/spring2016/stat4701/Edav-project-2/Final-Rmarkdown/Pawel Final/indiaDaily2007/india.gif"/>
+
+The animation shows every day from the beginning of June to the end of October 2007. Floods appear on the map once they have "began" according to the flood data and disappear in a similar fashion. Geopotential height is indicated by the shading, which is red for lower levels and blue for higher levels. The animation suggests that lower levels of geopotential height tend to occur before or at the beginning of floods. 
+
+The animation also points out another difficulty in predicting the severity of floods - not only does the actual rainfall (or proxy for it such as geopotential height) matter, but geography also plays a role. Note that there are many floods along the northern portion of India and into Bangladesh, despite there not being extreme values of geopotential height during this time. This, however, is related to the fact that this is where the mighty Ganges river runs, and rivers such as this can drain very large areas. Thus flooding can potentially occur long after and far away from the heavy rains. 
+<br>
+
+
+## Part 2 - Relationship between Geopotential Heigh & Flood Magnitude
+
+This section explores the relationship between Geopotential Heigh and Flood Magnitude by two major datasets. The first one is the "NOAA_Daily_phi_500mb.nc", which provides the geopotential heigh values and the second one is the "GlobalFloodsRecord.xls", which provides different kinds of flood data. In addition, we focous our analysis from 2012 to 2013 as well as from 2014 to 2015 within the region of the United States.
+
+### Methology
+scatter plot is utilized to glance the relationship between geopotential heigh values and flood magnitude. Besides, a simple linear regression models is used to determine the relationship namely:
+$$floodMagnitude = \beta_0 + \beta_1 * geopotentialHeigh$$
+
+### Data
+All data have been cleaned up and exported as csv file. The first five corresponding geopotential heigh and magnitude values from 2012 to 2013 are displayed below. Since each flood appearens in a period of time, the corresponding geopotential heigh value is taking by the mean during that period of time
+
+```{r}
+head(phi_magni1213)
+```
+
+Below are the data values from 2014 to 2015. Same as above, the corresponding geopotential heigh value is takeing by the mean during that period of time
+
+```{r, echo=FALSE}
+head(phi_magni1415)
+```
+
+### Result
+```{r}
+# Visualization with the Data
+# Bubble plot for phi from 2012 to 2013
+bubble.1213 <- ggplot(phi_magni1213, aes(phi_value1213, magnitude1213, size = phi_value1213))
+bubble.1213 <- bubble.1213 + geom_point(colour = "red") + scale_size(range = c(3, 6)) + xlab("Geopotential Heigh(phi) from 2012 to 2013") + ylab("Flood Magnitude from 2012 to 2013")
+# Bubble plot for phi from 2014 to 2015
+bubble.1415 <- ggplot(phi_magni1415, aes(phi_value1415, magnitude1415, size = phi_value1415))
+bubble.1415 <- bubble.1415 + geom_point(colour = "red") + scale_size(range = c(2, 6)) + xlab("Geopotential Heigh(phi) from 2014 to 2015") + ylab("Flood Magnitude from 2014 to 2015")
+# Display 2 graphics in a single window
+grid.arrange(bubble.1213, bubble.1415, ncol = 2, top = "Scatter Geopotential Height & Magnitude")
+```
+
+The above graphics display the relationship between geopotential heigh and flood magnitude in an Euclidean space, where the x axis represents geopotential heigh(phi) value and the y axis preresents the flood magnitude value. The size of the bubble also indicate how large the corresponding phi value is.
+
+The correlation between these variables are also included below
+
+geopotential heigh and flood magnitude correlation from 2012-2013:
+```{r}
+# Explore the correlation between phi & magnitude
+cor.phi.mag1213 <- cor(phi_magni1213$phi_value1213, phi_magni1213$magnitude1213)
+cor.phi.mag1213
+```
+
+geopotential heigh  and flood magnitude correlation from 2014-2015:
+```{r}
+cor.phi.mag1415 <- cor(phi_magni1415$phi_value1415, phi_magni1415$magnitude1415)
+cor.phi.mag1415
+```
+
+finally a simple linear regression model is being appied to test the relationship.
+
+geopotential heigh  and flood magnitude regression from 2012-2013:
+
+```{r, echo = F}
+###########################################
+# Fitting a linear regression for year 12 & 13 data
+lm.phi.mag1213 <- lm(magnitude1213 ~ phi_value1213, data = phi_magni1213)
+sp1213 <- ggplot(phi_magni1213, aes(phi_value1213, magnitude1213))
+sp1213 <- sp1213 + geom_point(colour = "red") + stat_smooth(method = lm, level = 0.99) + xlab("Geopotential Height(phi) from 2012 to 2013 ") + ylab("Flood Magnitude from 2012 to 2013")
+```
+
+geopotential height  and flood magnitude regression from 2014-2015:
+
+```{r, echo = F}
+# Fitting a linear regression for year 14 & 15 data
+lm.phi.mag1415 <- lm(magnitude1415 ~ phi_value1415, data = phi_magni1415)
+sp1415 <- ggplot(phi_magni1415, aes(phi_value1415, magnitude1415))
+sp1415 <- sp1415 + geom_point(colour = "red") + stat_smooth(method = lm, level = 0.99) + xlab("Geopotential Height(phi) from 2014 to 2015") + ylab("Flood Magnitude from 2014 to 2015")
+```
+
+visualize the result:
+
+```{r}
+# Display 2 graphics in a single window
+grid.arrange(sp1213, sp1415, ncol = 2, top = "Geopotential Height & Magnitude Linear Relation")
+```
+
+Both of the shaped areas represent the 99% confident level in the regression model.
+
+### Conclusion
+From the above result, we can not find a statiscal significant relationship between geopotential height and flood magnitude in the Uinted States from 2012 to 2013 and 2014 to 2015 data. However, this is most likely due to the time correlation among the data. Therefore, a better approach is to applied time series model toward the data.
+<br>
+
+
+## Part 3 - Understanding the Impact of Floods
+Flood have a huge impact on population and economy.  Heavy rain leads to destruction, death, displacement, healness, reparations.  Some countries may receive more floods based on its location (for example India) but some countries also don't have the capacity to prevent, prepare population, manage flood and repare.  In this analysis we will try to analyse what characteristic influence the impact of a flood.
+
 
 ```{r}
 
@@ -176,9 +293,7 @@ datc$GDPlevel <- ifelse(datc$Income.Group.OECD == "High income: OECD", 5,
 #       main="Income group Distributionse of Countries in Each Subregion")
 ```
 
-Different region groups have countries of varying income levels. 
-
-#Magnitude and Displacement/Death
+### Magnitude and Displacement/Death
 
 ```{r, echo = FALSE}
 # People displacement and country income group. 
@@ -199,14 +314,14 @@ dotplot(datc$peopleDead ~ datc$magnitude | datc$incomeGroup,
 
 library(nlme) 
 ```
-#Displacement
+### Displacement
 
 The scatterplot of people displaced for high income is concentrated in the bottom, which means that High Income countries tend to not displace people much regardless of the magnitude of the flood. 
 
 In contrast, low income, lower middle income, and upper middle income countries seem to be more middle-heavy. 
 These countries also seem to displace more people as magnitude increases. 
 
-#Deaths
+### Deaths
 The scatterplot of people dead for high income is very bottom-heavy, even more so than in displacement. 
 As income level goes down, we notice that a lot more points are plotted on top. 
 We can quantify this finding further by running a regression analysis by country income level. 
@@ -218,19 +333,19 @@ lmList(peopleDead ~ magnitude | incomeGroup, data = datc, na.action = na.omit)
 
 ```
 
-#Displacement
+### Displacement
 There is a trend of the slope coefficient on the variable "magnitude" as income level goes down. 
 This means that the higher the magnitude, the higher number of people are displaced as country income level goes down. 
 Intuitively, this can be interepreted as since high-income countries are better prepared for floods in all magnitude, they tend to displace only few people regardless of magnitude. 
 However, countries with low income do not have resources to prepare for floods with large magnitude. 
 Therefore, they tend to displace more people as magnitude intensifies. 
 
-#Death
+### Death
 Similarly, the coefficient on magnitude to predict number of death is not even positive for high income OECD countries. However, as the income level goes down, the importance of magnitude in predicting the number of deaths increases. The reasoning is the same as displacement. Countries with high income are better prepared, and they take good measures to prevent deaths from happeneing, even in cases of severe magnitudes. Countries with lower incomes do not have such resources. 
 
 Now, let's look at differing effects of affected area by country income group. 
 
-#Size of Affected Area and Displacement/Death
+### Size of Affected Area and Displacement/Death
 ```{r echo = FALSE}
 dotplot(datc$displaced ~ datc$affectedSqKm | datc$sub_region,
        xlab="Size of Affected Area", 
@@ -245,10 +360,10 @@ dotplot(datc$dead ~ datc$affectedSqKm | datc$incomeGroup,
 
 ```
 
-#Displacement
+### Displacement
 Similar to magnitude, in High Income OECD countreis, the scatterplot is bottom-heavy. Regardless of the size of the affected area, very few people were displaced. However for Lower middle income and upper middle income countries, the scatterplot is top-heavy, which means that the larger the affected area, the more people were displaced. 
 
-#Death
+### Death
 The correlation between number of people dead and the area of affected region seems to be lower for deaths. Again, for High-OECD countries, the scatterplot is very much bottom-heavy. 
 
 ```{r}
@@ -264,28 +379,43 @@ Interestingly, high income OECD countries and upper middle income countries have
 More detailed data can be found when countries are analyzed at a subregion level. 
 
 Size of Affected Area 
-
 ```{r, echo = FALSE}
-dotplot(datc$displaced ~ datc$affectedSqKm | datc$sub_region,
+dotplot(datc$displaced ~ datc$affectedSqKm | datc$region,
        xlab="Size of Affected Area", 
        ylab="People Displaced", 
        main="Displacement by Size of Affected Area Grouped by Region",
        data = datc)
 
-dotplot(datc$dead ~ datc$affectedSqKm | datc$sub_region, 
+dotplot(datc$dead ~ datc$affectedSqKm | datc$region, 
        xlab="Size of Affected Area", 
        ylab="People Dead", 
        main="Death by Size of Affected Area Grouped by Region",
        data = datc)
+lmList(peopleDisplaced ~ affectedSqKm | region, data = datc, na.action = na.omit)
+lmList(peopleDead ~ affectedSqKm | region, data = datc, na.action = na.omit)
 ```
 
-Subregions that displaced more people as the size of affected region increased were South America, Eastern Asia, and Southern Asia. 
-Subregions that displaced very few people regardless of the size of the affected area were western Asia and Austria and New Zealand. 
+When we look at the number of people displaced for different sizes of areas affected by region, we see that differnet continents have different trends. 
+The regression suggests that Asia displaces the most people and displaces more people as affected area increases.
+This is probably partly due to the positive relationship between affected area and magnitude as well. 
+Larger affected area means more intense magnitude, which leads to displacing more people. 
+(see regression below)
 
-Subregions that experienced more deaths as the size of affected region increased were Southern Asia and Eastern Asia
-Subregions that experienced few deaths regardless of the size of the affected area were Western Asia and Austria/New Zealand. 
+Oceania seems to displace fewest people as baseline and also doesn't seem to displace much more people as affected area increases. 
+This can be partly due to the fact that Oceania does not experience floods that cover as much area as Asia, as illustrated by the box and whiskers plot below. 
 
-#Magnitudes by Floods of Different Causes
+```{r, echo = FALSE}
+lm(datc$affectedSqKm ~ datc$magnitude)
+bwplot(~datc$affectedSqKm|factor(datc$region),
+       data = datc,
+       xlab="Affected Area", 
+       main="Size of Affected Area Distribution by Region",
+       scales=list(x=list(draw = FALSE))
+       ) 
+
+```
+
+### Magnitudes by Floods of Different Causes
 
 ```{r, echo = FALSE}
 
@@ -297,7 +427,7 @@ bwplot(~datc$magnitude|factor(datc$mainCause1),data=datc,col="blue",
 While Landslides and Avalanches seem to cause floods only between magnitudes of 4 and 5, Heavy rain seems to cause floods of varying degrees of magnitudes. 
 
 
-#Size of Affected Areas by Floods of Different Causes
+### Size of Affected Areas by Floods of Different Causes
 
 ```{r, echo = FALSE}
 bwplot(~datc$affected|factor(datc$mainCause1),data=datc,col="blue",
@@ -322,7 +452,7 @@ bwplot(~datc$dead|factor(datc$mainCause1),data=datc,col="blue",
 Monsoons and Hurricanes/Tropical Storm seem to displace many people while Landslides/avalanches and snow/ice melt seem to usually displace fewer people. 
 Tsunamis always seem to kill many people, while snow/ice melt seems to always kill only few people. 
 
-#Damage Caused by Floods 
+### Damage Caused by Floods 
 ```{r, echo = FALSE}
 dotplot(datc$damageUsd ~ datc$affectedSqKm | datc$sub_region, 
        xlab="Size of Affected Area", 
@@ -344,17 +474,7 @@ hist + geom_bar(color = "black", aes(fill = datc$mainCause1, position = "fill"))
 
 South-Eastern Asia, followed by Southern Asia and then Eastern Asia and Northen America, experience the most number of floods. For each region, over 50% or more floods are caused by heavy rain. In the case of Southern Asia, a large portion of floods are caused by Monsoon. Hurricane/Tropical Storms seem to happen quite often in South-Eastern Asia and Eastern Asia. 
 
-
-
-# Part 4 - Understanding the impact of flood
-
-Flood have a huge impact on population and economy.
-Heavy rain leads to destructionsm, death, displacement, healness, reparations.
-Some countries may receive more floods based on its location (for example India) but some countries also don't have the capacity to prevent, prepare population, manage flood and repare.
-
-In this analysis we will try to analyse what characteristic influence the impact of a flood.
-
-## Impact evolution
+### Impact evolution
 
 Let's first take a look at the evolution of flood in time
 
@@ -392,7 +512,7 @@ For example:
  + Central America is mainly touched by hurricane.
   
 
-# Impact on population
+### Impact on population
 ```{r, echo=FALSE}
 # Multiple plot function
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
@@ -450,7 +570,7 @@ Based on these 2 graphs, we note 2 things:
  + When we look at the number of people displaced, we see a very different patern. It is quite stable and the main event that push people to move is Monsoon. Furthermore, we know that monsoon tend to happend in a very specific region of the world, mainly south east Asia.
  
 
-## Characteristics of country and floods' impact
+### Characteristics of country and floods' impact
 
 In what type of countries does flood have a greater impact on population?
 To answer this question we will gather and merge data about Human development index (HDI), life expectancy, expected number of school year, Gross National Income (GNI) per capita.
@@ -465,7 +585,7 @@ ggplot(subset(flood2, mainCause1 = "Dam failure")) +
 
 When we look at people displaced, we see that it mainly affect Asian and African countries and mainly countries with low (below 0.6) or medium (between 0.6 and 0.75) HDI.
 
-## Regression Model
+### Regression Model
 
 
 
@@ -485,7 +605,7 @@ summary(fit1)
 
 There is a true correlation between the stage of development of a country and the number of displaced people during floods.
 
-## Main finding
+### Main finding
 
 When it comes to death toll, no country is protected against a huge event as a huge tsunami or a hurricane. But facing heavy rain, developed country have better infrastructure and a greater capacity to take care of the people touched by such event. They also have the ability to quickly repair in order to make the population suffer a minimum time so that they don't have to move.
 
