@@ -23,14 +23,8 @@ library("Hmisc")
 library(plotly)
 library(scales)
 library(RColorBrewer)
-<<<<<<< HEAD
-#setwd("/Users/jaeheehwang/Downloads/Edav-project-2-master 2/")
-#setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
-setwd("C:/Users/14z/Documents/Github/edavProject2/")
-=======
 
 setwd('~/Desktop/qmss/Edav-project-2')
->>>>>>> pete-edits
 
 ### Junhui
 flood <- read.csv("./data/floodClean.csv")
