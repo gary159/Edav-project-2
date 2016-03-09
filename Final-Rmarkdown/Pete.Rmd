@@ -5,7 +5,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning=FALSE, message=FALSE)
-setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
+setwd('~/Desktop/qmss/Edav-project-2')
 floods <- read.csv('./data/cleanGlobalFloodDataWithRegions.csv')
 ```
 

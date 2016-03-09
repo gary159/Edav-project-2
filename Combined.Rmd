@@ -23,9 +23,14 @@ library("Hmisc")
 library(plotly)
 library(scales)
 library(RColorBrewer)
+<<<<<<< HEAD
 #setwd("/Users/jaeheehwang/Downloads/Edav-project-2-master 2/")
 #setwd('~/Desktop/qmss/spring2016/stat4701/Edav-project-2')
 setwd("C:/Users/14z/Documents/Github/edavProject2/")
+=======
+
+setwd('~/Desktop/qmss/Edav-project-2')
+>>>>>>> pete-edits
 
 ### Junhui
 flood <- read.csv("./data/floodClean.csv")
@@ -108,7 +113,7 @@ Many of the above plots mostly follow a 'power law' distribution, with the bulk 
 ```{r floods}
 library(ggplot2)
 
-primaryCauses <- floods[floods$mainCause1 %in% c("Heavy Rain", "Monsoon", "Hurricane/Tropical Storm", "Snow/Ice Melt"),]
+primaryCauses <- floods[floods$mainCause1 %in% c("Heavy Rain", "Monsoon", "Hurricane/Tropical Storm", "Snow/Ice Melt", "Dam Failure", "Landslides/Avalanches", "Tsunami", "Storm/Tidal Surge"),]
 
 mapWorld <- borders("world", colour="gray50")
 m <- ggplot(primaryCauses) + mapWorld
@@ -117,6 +122,7 @@ m <- m + geom_point(aes(x=centroidX,
                         color=mainCause1),
                     alpha=.5, size=1, show.legend=FALSE)
 m + facet_wrap(facets= ~mainCause1, ncol=2)
+
 ```
 
 This plot shows the spatial distribution of floods by cause.  Not surprisingly, the plot indicates that the geography has a significant effect on the type of flooding experinced in different parts of the world.  Floods due to Monsoon, for example happen primarily in the Indian Ocean and Southeast Asia; floods cause by snow melt happen at more northerly mountainous regions; floods caused by hurricaines and tropical storms happen mostly along the coast in warmer, more tropical latitudes.  Floods caused by heavy rainfall were present all over the world (except in expected locations like desserts).  Further (and also not surprisingly), we noticed that floods occur most frequently near rivers and coastlines. 
